@@ -1,0 +1,150 @@
+// CHROME DEV TOOLs
+
+The purpose of this Java program is to use
+**Selenium WebDriver** in conjunction with **Chrome DevTools Protocol (CDP)
+** to track, log, and monitor network activity during browser interactions. Specifically, this example captures the URLs
+ of network requests made when navigating to a webpage (in this case, Google) and logs them to the console.
+ This is a detailed walkthrough of how it achieves that goal:
+
+### **What is Chrome DevTools Protocol (CDP)?**
+CDP is a set of low-level APIs provided by Chrome (and Chromium-based browsers) that expose the internal workings of
+the browser. This includes features like:
+
+- Inspecting and interacting with network traffic.
+- Modifying browser behavior (e.g., throttling network or emulating different devices).
+- Capturing performance metrics and much more.
+
+By integrating **Chrome DevTools** with **Selenium WebDriver**, developers can perform advanced tasks like:
+- Capturing and inspecting network requests and responses.
+- Emulating specific network conditions (e.g., offline, slow connection).
+- Manipulating cookies, headers, etc., for testing purposes.
+
+### **Purpose of the Code:**
+This program:
+1. **Starts a Chrome browser.**
+2. **Sets up a session to communicate with Chrome DevTools.**
+3. **Monitors and logs outgoing network requests** when a specific webpage (Google) is loaded.
+4. **Closes the browser** once the task is completed.
+
+Here’s an in-depth breakdown of what each section does:
+
+---
+
+### **1. WebDriver Initialization**
+```java
+WebDriver driver = new ChromeDriver();
+```
+- This line initializes the Selenium WebDriver using the `ChromeDriver` class. The `ChromeDriver` is a special WebDriver
+ implementation specifically designed to control a Chrome browser instance. It launches a new Chrome browser and
+ establishes a connection between your Java program and Chrome.
+
+The `driver` object now represents an active instance of Chrome that you can control programmatically—e.g., instruct it
+ to open websites, click buttons, extract data, etc.
+
+---
+
+### **2. Accessing DevTools and Creating a Session**
+```java
+DevTools devTools = ((ChromeDriver) driver).getDevTools();
+devTools.createSession();
+```
+- **`getDevTools()`**: This method fetches the **DevTools** object from the current ChromeDriver instance. This object
+ provides access to the Chrome DevTools Protocol, allowing you to send low-level commands to the browser and listen for
+ browser events.
+
+- **`createSession()`**: Establishes a DevTools session, which is required to send commands and listen for events like
+ network activity. Without this session, the communication with DevTools wouldn’t happen, and advanced browser
+ interactions wouldn’t be possible.
+
+---
+
+### **3. Enabling Network Traffic Monitoring**
+```java
+devTools.send(Network.enable(Optional.empty(), Optional.empty(), Optional.empty()));
+```
+- This line sends a command to the DevTools API, instructing it to start monitoring and tracking all network activity.
+
+  - **`Network.enable()`** is a method that turns on network monitoring in Chrome. It starts capturing events related
+  to network activity, such as requests being sent, responses received, and network errors.
+
+  - **Parameters**:
+    - The method accepts three optional parameters:
+      1. **Maximum Total Buffer Size**: Not specified (`Optional.empty()`), meaning no limit on the size of captured
+      network events.
+      2. **Maximum Resource Buffer Size**: Again, left unspecified, which means the buffer size is not capped.
+      3. **Intercepted URL Patterns**: Also unspecified, meaning all network requests (not just a specific set of URLs)
+       will be tracked.
+
+By enabling network events, you're preparing the DevTools protocol to start "listening" to network traffic as the
+browser interacts with web pages.
+
+---
+
+### **4. Setting Up a Listener to Capture and Log Network Requests**
+```java
+devTools.addListener(Network.requestWillBeSent(), request -> {
+    System.out.println("Request URL: " + request.getRequest().getUrl());
+});
+```
+- This line sets up a **listener** to intercept and act on any network requests made by the browser. Specifically,
+it listens for the **`requestWillBeSent`** event, which is triggered every time the browser is about to send an HTTP
+request to a server.
+
+  - **`Network.requestWillBeSent()`**: This method returns a stream of network requests about to be sent. It includes
+  detailed information about the request such as the URL, headers, and HTTP method (GET, POST, etc.).
+
+  - **`addListener()`**: Registers a listener (callback function) that will be executed every time a network request
+  event is detected. In this case, the listener prints the **URL** of the outgoing network request to the console.
+
+  - **Lambda expression (request -> ...)**: This is the code that gets executed when the listener detects a network
+  request. Here, it simply extracts the URL from the `request` object and prints it.
+
+The key point here is that this listener is capturing **all network requests** made by the browser, not just the
+final URL of the webpage. This includes requests for stylesheets, scripts, images, API calls, etc.
+
+---
+
+### **5. Opening a Webpage**
+```java
+driver.get("https://www.google.com");
+```
+- This line instructs the WebDriver to open the Google homepage. As soon as this happens, a flurry of network requests
+ is made by the browser to fetch various resources (HTML, CSS, JavaScript, etc.) from Google's servers.
+
+  - These requests trigger the **`requestWillBeSent`** event that we set up in the previous step, allowing us to
+  capture and log each URL.
+
+---
+
+### **6. Closing the Browser**
+```java
+driver.quit();
+```
+- Once the webpage is loaded and the network requests are captured, this line closes the browser window and ends the
+WebDriver session. This ensures that the resources associated with the WebDriver instance are properly cleaned up.
+
+---
+
+### **Detailed Use Case for the Code:**
+
+The code is useful in scenarios where you want to:
+1. **Monitor Network Activity**: Track which URLs a webpage interacts with. This is valuable for testing purposes,
+ especially in verifying that API calls are correctly made and that external resources (like ads, scripts, or third-party services) are loading properly.
+
+2. **Debugging and Performance Testing**: By capturing network requests, you can analyze the performance of web pages,
+ check the size of resources being loaded, and observe the sequence of network requests.
+
+3. **Testing Security and Compliance**: Monitor whether third-party requests or trackers are being sent without user
+ consent or whether sensitive data is being exposed through certain network calls.
+
+4. **API Validation**: For web applications that make asynchronous API requests (e.g., using AJAX), this setup can help
+ verify that the correct API calls are made when user actions occur, and validate their structure (URL, parameters, headers).
+
+---
+
+### **Summary**
+The overall purpose of this code is to **observe, capture, and log network traffic** using the Chrome DevTools Protocol
+while interacting with a webpage via Selenium WebDriver. This allows developers and testers to inspect outgoing network
+requests, making it useful for debugging, performance testing, security audits, and API validation. By extending
+Selenium with Chrome DevTools Protocol, you gain access to a much deeper level of browser control, particularly
+useful for web testing beyond the UI layer.
